@@ -3,10 +3,8 @@ build/
 install/
 log/
 # Editors and language caches
-.DS_Store
-.vscode/
+.vscode/settings.json
 .history/
-.idea/
 __pycache__/
 *.pyc
 # Local device settings and collected data

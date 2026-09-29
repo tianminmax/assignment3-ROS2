@@ -1,5 +1,14 @@
 {
   "cmake.configureOnOpen": false,
   "C_Cpp.default.compileCommands": "${workspaceFolder}/build/hikrobot_camera/compile_commands.json",
-  "cmake.sourceDirectory": "/home/tomliu/Programs/assignment3-ROS2/src/hikrobot_camera"
+  "cmake.sourceDirectory": "/home/tomliu/Programs/assignment3-ROS2/src/hikrobot_camera",
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+    "python.analysis.extraPaths": [
+        "/opt/ros/humble/lib/python3.10/site-packages"
+    ],
+    "python.autoComplete.extraPaths": [
+        "/opt/ros/humble/lib/python3.10/site-packages"
+    ],
+    "python.analysis.typeCheckingMode": "basic",
+    "python.terminal.activateEnvironment": false
 }
