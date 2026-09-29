@@ -1,5 +1,46 @@
-# Only parameters currently supported by the scaffold are listed here.
-# TODO(student): Design and implement camera parameters before adding them.
+# Parameters for the hikrobot_camera node.
+#
+# A negative value means "leave the camera untouched"; that is the default, so
+# the node never fights with settings you made in the MVS client.
 /hikrobot_camera:
   ros__parameters:
     use_sim_time: false
+
+    # --- device selection -------------------------------------------------
+    # Leave both empty to open the only camera found. With several cameras
+    # attached, set serial_number (recommended) or ip_address.
+    serial_number: ""
+    ip_address: ""
+
+    # --- output -----------------------------------------------------------
+    image_topic: "/image_raw"
+    frame_id: "camera_optical_frame"
+    # 'host' = timestamp reported by the SDK, 'now' = stamp at publish time.
+    timestamp_source: "host"
+    # Image QoS: best_effort is the usual choice for a camera stream.
+    qos_reliability: "best_effort"
+    queue_size: 5
+
+    # --- acquisition ------------------------------------------------------
+    grab_timeout_ms: 1000
+    reconnect_after_failures: 3
+    reconnect_interval_ms: 1000
+
+    # --- camera features --------------------------------------------------
+    # Pixel format requested from the camera. Common values: BayerRG8, Mono8,
+    # RGB8, BGR8. Bayer gives the highest frame rate; the node debayers it.
+    pixel_format: "BayerRG8"
+
+    # Automatic exposure/gain: "" leaves the current mode alone, otherwise one
+    # of Off / Once / Continuous.
+    exposure_auto: ""
+    gain_auto: ""
+
+    # Manual exposure time [us] and gain [dB]. Negative = leave unchanged.
+    # Setting either one forces the matching *Auto mode to Off.
+    exposure_time_us: -1.0
+    gain_db: -1.0
+
+    # Acquisition frame rate [fps]. Negative = leave the camera untouched,
+    # which on most models means "as fast as the exposure allows".
+    acquisition_frame_rate: -1.0

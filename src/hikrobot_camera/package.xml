@@ -1,17 +1,27 @@
 <?xml version="1.0"?>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>hikrobot_camera</name>
   <version>0.0.0</version>
-  <description>Training scaffold for a ROS 2 Humble camera SDK assignment.</description>
-  <!-- Replace placeholder maintainer and choose a license before publishing. -->
+  <description>ROS 2 Humble driver for HIKROBOT machine vision cameras (MVS SDK).</description>
+  <!-- TODO(student): replace the placeholder maintainer and pick a license. -->
   <maintainer email="student@example.com">Student Name</maintainer>
-  <license>TODO</license>
+  <license>Apache-2.0</license>
+
   <buildtool_depend>ament_cmake</buildtool_depend>
+
   <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+
   <exec_depend>launch</exec_depend>
   <exec_depend>launch_ros</exec_depend>
   <exec_depend>ament_index_python</exec_depend>
-  <!-- Add dependencies when your implementation uses them. -->
+  <exec_depend>ros2launch</exec_depend>
+
+  <!-- The HIKROBOT MVS SDK is a vendor dependency: it is not available through
+       rosdep. Install it from the HIKROBOT download centre and make sure
+       MVCAM_SDK_PATH (and LD_LIBRARY_PATH) point at it, see README.md. -->
+
   <export>
     <build_type>ament_cmake</build_type>
   </export>
