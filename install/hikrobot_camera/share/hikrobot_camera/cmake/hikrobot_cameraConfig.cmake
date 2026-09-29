@@ -1,0 +1,1 @@
+/home/tomliu/Programs/assignment3-ROS2/build/hikrobot_camera/ament_cmake_core/hikrobot_cameraConfig.cmake

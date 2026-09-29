@@ -1,0 +1,5 @@
+{
+  "cmake.configureOnOpen": false,
+  "C_Cpp.default.compileCommands": "${workspaceFolder}/build/hikrobot_camera/compile_commands.json",
+  "cmake.sourceDirectory": "/home/tomliu/Programs/assignment3-ROS2/src/hikrobot_camera"
+}
