@@ -1,1 +1,0 @@
-/home/tomliu/Programs/assignment3-ROS2/build/hikrobot_camera/ament_cmake_environment_hooks/local_setup.zsh

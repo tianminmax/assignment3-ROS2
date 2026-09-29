@@ -1,1 +1,0 @@
-/home/tomliu/Programs/assignment3-ROS2/src/hikrobot_camera/launch/camera.launch.py

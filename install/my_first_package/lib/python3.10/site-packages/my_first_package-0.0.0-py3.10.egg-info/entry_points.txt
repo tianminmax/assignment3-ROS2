@@ -1,3 +1,0 @@
-[console_scripts]
-talker = my_first_package.simple_publisher:main
-
