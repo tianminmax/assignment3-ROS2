@@ -5,6 +5,7 @@ log/
 # Editors and language caches
 .DS_Store
 .vscode/
+.history/
 .idea/
 __pycache__/
 *.pyc
