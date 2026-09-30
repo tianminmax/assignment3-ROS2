@@ -1,5 +1,5 @@
 # SDK 构建集成
 
-你可以按需在这里添加 CMake 模块，用于查找 MVS 的头文件和库。新增模块后，记得在主 `CMakeLists.txt` 中使用它。
+`FindMVS.cmake` 用于查找海康机器人 MVS SDK 的头文件和库，已接入主 `CMakeLists.txt`（`find_package(MVS REQUIRED)`）。
 
-查找路径应允许配置，避免只适用于你自己机器上的绝对路径。当前工程尚未接入 SDK。
+查找顺序：`-DMVS_ROOT_DIR=...` → 环境变量 `MVCAM_SDK_PATH` → `/opt/MVS` → `/usr/local/MVS`。

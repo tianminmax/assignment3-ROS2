@@ -170,17 +170,18 @@ void CameraNode::declareParameters()
 
 void CameraNode::refreshCachedParameters()
 {
+  std::lock_guard<std::mutex> lock(config_mutex_);
   serial_number_ = get_parameter("serial_number").as_string();
   ip_address_ = get_parameter("ip_address").as_string();
   frame_id_ = get_parameter("frame_id").as_string();
   timestamp_source_ = get_parameter("timestamp_source").as_string();
   qos_reliability_ = get_parameter("qos_reliability").as_string();
   queue_size_ = std::max<int64_t>(1, get_parameter("queue_size").as_int());
-  grab_timeout_ms_ = std::max<int64_t>(1, get_parameter("grab_timeout_ms").as_int());
-  reconnect_after_failures_ =
-    std::max<int64_t>(1, get_parameter("reconnect_after_failures").as_int());
-  reconnect_interval_ms_ =
-    std::max<int64_t>(1, get_parameter("reconnect_interval_ms").as_int());
+  grab_timeout_ms_.store(std::max<int64_t>(1, get_parameter("grab_timeout_ms").as_int()));
+  reconnect_after_failures_.store(
+    std::max<int64_t>(1, get_parameter("reconnect_after_failures").as_int()));
+  reconnect_interval_ms_.store(
+    std::max<int64_t>(1, get_parameter("reconnect_interval_ms").as_int()));
 }
 
 std::vector<rclcpp::Parameter> CameraNode::currentCameraParameters() const
@@ -361,7 +362,15 @@ rcl_interfaces::msg::SetParametersResult CameraNode::onParameterChange(
 
 bool CameraNode::connect(const std::vector<rclcpp::Parameter> & features, std::string * reason)
 {
-  if (!camera_.open(serial_number_, ip_address_, reason)) {
+  std::string serial;
+  std::string ip;
+  {
+    std::lock_guard<std::mutex> lock(config_mutex_);
+    serial = serial_number_;
+    ip = ip_address_;
+  }
+
+  if (!camera_.open(serial, ip, reason)) {
     return false;
   }
 
@@ -421,7 +430,7 @@ void CameraNode::acquisitionLoop()
       }
       if (!connection_failed && camera_.isOpen()) {
         result = camera_.grabFrame(
-          &frame, static_cast<unsigned int>(grab_timeout_ms_), &grab_error);
+          &frame, static_cast<unsigned int>(grab_timeout_ms_.load()), &grab_error);
         if (result == GrabResult::kOk) {
           publishFrame(frame);
         }
@@ -431,7 +440,7 @@ void CameraNode::acquisitionLoop()
     if (connection_failed) {
       RCLCPP_WARN_THROTTLE(
         get_logger(), *get_clock(), 5000, "camera connection failed: %s", connect_error.c_str());
-      std::this_thread::sleep_for(std::chrono::milliseconds(reconnect_interval_ms_));
+      std::this_thread::sleep_for(std::chrono::milliseconds(reconnect_interval_ms_.load()));
       continue;
     }
 
@@ -462,7 +471,7 @@ void CameraNode::acquisitionLoop()
     if (consecutive_failures == 1) {
       RCLCPP_WARN(get_logger(), "frame grab failed: %s", grab_error.c_str());
     }
-    if (consecutive_failures >= reconnect_after_failures_) {
+    if (consecutive_failures >= reconnect_after_failures_.load()) {
       RCLCPP_ERROR(
         get_logger(), "%d consecutive grab failures (%s); closing the device to reconnect",
         consecutive_failures, grab_error.c_str());
@@ -475,7 +484,12 @@ void CameraNode::acquisitionLoop()
 
 rclcpp::Time CameraNode::stampFor(const Frame & frame) const
 {
-  if (timestamp_source_ == "host" && frame.host_timestamp_ms > 0) {
+  std::string source;
+  {
+    std::lock_guard<std::mutex> lock(config_mutex_);
+    source = timestamp_source_;
+  }
+  if (source == "host" && frame.host_timestamp_ms > 0) {
     return rclcpp::Time(static_cast<int64_t>(frame.host_timestamp_ms) * 1000000LL);
   }
   return now();
@@ -489,7 +503,10 @@ bool CameraNode::publishFrame(const Frame & frame)
 
   sensor_msgs::msg::Image message;
   message.header.stamp = stampFor(frame);
-  message.header.frame_id = frame_id_;
+  {
+    std::lock_guard<std::mutex> lock(config_mutex_);
+    message.header.frame_id = frame_id_;
+  }
   message.height = frame.height;
   message.width = frame.width;
   message.is_bigendian = false;

@@ -1,4 +1,4 @@
-"""Launch the training scaffold; this does not implement a camera driver."""
+"""Launch the hikrobot_camera node with the default parameter file."""
 
 from pathlib import Path
 

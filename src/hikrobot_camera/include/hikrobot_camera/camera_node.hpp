@@ -78,18 +78,24 @@ private:
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr publisher_;
   rclcpp::node_interfaces::OnSetParametersCallbackHandle::SharedPtr parameter_callback_;
 
-  // Cached parameters. `image_topic_` is fixed at startup, everything else is
-  // refreshed whenever the parameters change.
+  // Cached parameters. `image_topic_`, `qos_reliability_` and `queue_size_`
+  // are fixed at startup and never read again afterwards, so plain members are
+  // safe. The remaining values are read by the acquisition thread while the
+  // parameter callback rewrites them: integers are atomic and the strings are
+  // guarded by `config_mutex_`.
   std::string image_topic_{"/image_raw"};
+  std::string qos_reliability_{"best_effort"};
+  int64_t queue_size_{5};
+
+  mutable std::mutex config_mutex_;
   std::string serial_number_;
   std::string ip_address_;
   std::string frame_id_{"camera_optical_frame"};
   std::string timestamp_source_{"host"};
-  std::string qos_reliability_{"best_effort"};
-  int64_t queue_size_{5};
-  int64_t grab_timeout_ms_{1000};
-  int64_t reconnect_after_failures_{3};
-  int64_t reconnect_interval_ms_{1000};
+
+  std::atomic<int64_t> grab_timeout_ms_{1000};
+  std::atomic<int64_t> reconnect_after_failures_{3};
+  std::atomic<int64_t> reconnect_interval_ms_{1000};
 };
 
 }  // namespace hikrobot_camera
