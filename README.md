@@ -91,11 +91,24 @@ ros2 launch hikrobot_camera camera.launch.py params_file:=/absolute/path/to/came
 
 ### 在 RViz2 中查看
 
+最省事的方式是用仓库自带的 RViz2 配置（话题和 QoS 都已配好）：
+
 ```bash
-rviz2
+ros2 launch hikrobot_camera camera.launch.py rviz:=true
 ```
 
-左侧 `Displays` → `Add` → `Image` → `Image Topic` 选 `/image_raw`。图像应稳定刷新，`Status` 为 `OK`。（如果 RViz2 里不显示，先确认话题有数据：`ros2 topic hz /image_raw`。）
+也可以单独启动：
+
+```bash
+rviz2 -d $(ros2 pkg prefix hikrobot_camera)/share/hikrobot_camera/config/camera.rviz
+```
+
+如果要自己在空白 RViz2 里加：`Add` → `Image` → `Image Topic` 选 `/image_raw`，
+**并把该显示的 `Reliability Policy` 改成 `Best effort`**。
+
+原因是相机图像属于传感器数据，驱动用 `best_effort` QoS 发布；RViz2 的 Image 显示默认
+是 `Reliable`，两者不匹配时 RViz2 不会收到任何消息（graph 上看得到话题，但画面是空的）。
+`config/camera.rviz` 已经把这一项设好了。
 
 ### 命令行查看/设置参数
 
@@ -134,7 +147,7 @@ Setting parameter failed: exposure_time_us=5000000 is outside the supported rang
 | `grab_timeout_ms` | int | `1000` | 单次取帧超时；也是断流后的重试周期 |
 | `reconnect_after_failures` | int | `3` | 连续失败多少次后关闭设备并重连 |
 | `reconnect_interval_ms` | int | `1000` | 两次重连尝试之间的间隔 |
-| `pixel_format` | string | `BayerRG8` | 请求的相机像素格式，如 `BayerRG8`/`Mono8`/`RGB8` |
+| `pixel_format` | string | `BayerRG8` | 请求的相机像素格式，如 `BayerRG8`/`Mono8`/`RGB8`；修改时会短暂停流（相机要求非取流状态下切换） |
 | `exposure_auto` | string | `""` | `ExposureAuto`：`""`/`Off`/`Once`/`Continuous` |
 | `exposure_time_us` | double | `-1.0` | 手动曝光时间，单位**微秒**；设值时会先关闭自动曝光 |
 | `gain_auto` | string | `""` | `GainAuto`：`""`/`Off`/`Once`/`Continuous` |
@@ -175,15 +188,39 @@ Setting parameter failed: exposure_time_us=5000000 is outside the supported rang
 | RViz2 画面花屏/错位 | 像素格式与编码不匹配；确认 `pixel_format` 是相机支持的格式，并检查日志里的 `active pixel format` |
 | 实际帧率远低于设置值 | 曝光时间过长、网卡带宽不足、Bayer 转换开销；先看日志里的 actual fps，再逐项排除 |
 | 别的节点/RViz2 收不到图像，提示 `requesting incompatible QoS` | 订阅端用了 `reliable`，而图像默认是 `best_effort`（可靠订阅者收不到 best_effort 的发布者）。把节点参数改成 `qos_reliability: reliable`，或把订阅端改成 `best_effort` |
+| `ros2 param get/set` 长时间不返回，或 `ros2 node list` 出现两个同名节点 | 同一 ROS 2 网络（同一 `ROS_DOMAIN_ID`）上有别的机器或进程也起了 `/hikrobot_camera`，参数请求会发到对面那个节点上。用 `ROS_DOMAIN_ID=xx` 隔离，或给节点加 namespace |
 | 参数设置报 `rejected: 0x...` | 该相机不支持此节点（如 `AcquisitionFrameRateEnable`）；用 MVS 客户端的 Node 列表确认可用功能 |
 
-## 八、已知限制
+## 八、本机实测记录
+
+以下数据是在本机（Ubuntu 22.04 + ROS 2 Humble + MVS 4.8.2.1）用真实相机
+`MV-CS016-10UC`（USB3，序列号 `DB0178696`，1440x1080 BayerRG8）测得的，可作为验收时的对照基准：
+
+| 测试项 | 结果 |
+| --- | --- |
+| `colcon build`（全量） | 通过，无错误无警告 |
+| 启动与连接 | `camera connected, streaming started`，`ros2 topic list` 有 `/image_raw` |
+| 消息内容 | `encoding=bgr8`、`width=1440`、`height=1080`、`step=4320`；`len(data)=4665600=height*step` |
+| 时间戳 | 与系统时间差约 0.01 s（`timestamp_source: host`） |
+| 默认实际帧率 | 约 165 fps |
+| `acquisition_frame_rate=30.0` | 实测 30.00 fps，与设置值一致 |
+| `exposure_time_us` = 200 / 2000 / 20000 | 图像平均亮度 0.07 / 2.57 / 32.76，单调变化 |
+| `gain_db=20.0` | 被拒绝并提示 `outside the supported range [0, 16.9807] dB` |
+| `pixel_format` BayerRG8 ↔ Mono8 | 均切换成功，编码分别为 `bgr8`/`mono8`、`step` 为 4320/1440 |
+| `pixel_format=NotAFormat` | 被拒绝并提示 `rejected: 0x80000004 (invalid parameter)` |
+| 断线重连 | 逻辑已实现；需要用物理拔插网线/USB 复核，见下方步骤 |
+
+断线重连的复核方式：保持节点运行，把相机 USB 线或网线拔掉约 5 秒再插回，观察日志出现
+`closing the device to reconnect`，随后重新出现 `camera connected, streaming started`，
+图像恢复即可。
+
+## 九、已知限制
 
 - 未实现 `camera_info` 标定信息发布（导航组如需内参，可后续加 `camera_info_manager`）。
 - 未实现硬件触发/软触发模式，当前固定为连续自由采集。
 - 参数只覆盖题目要求的曝光、增益、帧率、像素格式，其它相机功能需在 MVS 客户端设置。
 - 仅在本机的 MVS SDK 4.8.x 上编译验证；不同 SDK 版本若接口有变动，需要相应调整。
 
-## 九、提交
+## 十、提交
 
 将源代码、Launch 和参数配置推送到你的 Fork，然后提交仓库链接到 **2719850558@qq.com**，格式：`第三次作业-班级-姓名`（例如 `第三次作业-自动化2305-周湛昊`）。

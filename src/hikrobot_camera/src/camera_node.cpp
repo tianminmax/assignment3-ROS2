@@ -217,7 +217,34 @@ bool CameraNode::applyCameraParameter(
     if (value.empty()) {
       return true;
     }
-    return camera_.setPixelFormat(value, reason);
+
+    // Most cameras refuse a new PixelFormat while acquisition is running (the
+    // SDK answers MV_E_GC_ACCESS), so stop the stream, reconfigure and restart.
+    const bool was_grabbing = camera_.isGrabbing();
+    if (was_grabbing) {
+      std::string ignored;
+      camera_.stopGrabbing(&ignored);
+    }
+
+    std::string set_error;
+    const bool switched = camera_.setPixelFormat(value, &set_error);
+
+    if (was_grabbing) {
+      std::string restart_error;
+      if (!camera_.startGrabbing(&restart_error)) {
+        RCLCPP_ERROR(
+          get_logger(), "could not restart the stream after changing the pixel format: %s",
+          restart_error.c_str());
+      }
+    }
+
+    if (!switched) {
+      *reason = set_error;
+      return false;
+    }
+
+    RCLCPP_INFO(get_logger(), "pixel format switched to %s", value.c_str());
+    return true;
   }
 
   if (name == "exposure_auto") {

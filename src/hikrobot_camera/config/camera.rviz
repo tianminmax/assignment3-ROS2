@@ -1,0 +1,51 @@
+Panels:
+  - Class: rviz_common/Displays
+    Help Height: 78
+    Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Image1
+      Splitter Ratio: 0.6
+    Tree Height: 617
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz_default_plugins/Image
+      Enabled: true
+      Max Value: 1
+      Median window: 5
+      Min Value: 0
+      Name: Image
+      Normalize Range: true
+      # Keep this small: the camera may publish well above 30 fps.
+      Queue Size: 2
+      Transport Hint: raw
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        # The driver publishes with best_effort QoS (sensor data); RViz2 has to
+        # ask for the same, otherwise it silently receives nothing.
+        Reliability Policy: Best Effort
+        Value: /image_raw
+      Value: true
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: camera_optical_frame
+    Frame Rate: 30
+  Tools: []
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Distance: 10
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.06
+      Name: Current View
+      Pitch: 0.785
+      Yaw: 0.785
+Window Geometry:
+  Height: 800
+  Width: 1200
+  Displays:
+    collapsed: false

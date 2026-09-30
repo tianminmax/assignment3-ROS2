@@ -33,12 +33,12 @@
 
     # Automatic exposure/gain: "" leaves the current mode alone, otherwise one
     # of Off / Once / Continuous.
-    exposure_auto: ""
+    exposure_auto: "Off"
     gain_auto: ""
 
     # Manual exposure time [us] and gain [dB]. Negative = leave unchanged.
     # Setting either one forces the matching *Auto mode to Off.
-    exposure_time_us: -1.0
+    exposure_time_us: 30000.0
     gain_db: -1.0
 
     # Acquisition frame rate [fps]. Negative = leave the camera untouched,

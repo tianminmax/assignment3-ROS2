@@ -85,6 +85,7 @@ public:
   void close();
 
   bool startGrabbing(std::string * error);
+  bool isGrabbing() const { return grabbing_; }
   bool stopGrabbing(std::string * error);
 
   GrabResult grabFrame(Frame * frame, unsigned int timeout_ms, std::string * error);
