@@ -1,5 +1,0 @@
-/turtlesim:
-  ros__parameters:
-    background_r: 238
-    background_g: 130
-    background_b: 238
